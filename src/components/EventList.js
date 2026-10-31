@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDate, formatTime } from '../format';
+import { formatDate, formatTime } from './format';
 
 export default function EventList({ events, onDelete, onCreateClick }) {
   return (

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { todayISO } from '../format';
+import { todayISO } from './format';
 
 const CATEGORIES = ['Conference', 'Workshop', 'Concert', 'Wedding', 'Fundraiser', 'Meetup', 'Other'];
 
@@ -36,6 +36,7 @@ export default function EventForm({ onCreate, onDone }) {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const change = e => {
     const { name, value } = e.target;
@@ -50,6 +51,8 @@ export default function EventForm({ onCreate, onDone }) {
     if (Object.keys(found).length) return;
 
     setSaving(true);
+    setSubmitError('');
+    setSaved(false);
     try {
       await onCreate({
         ...values,
@@ -60,6 +63,9 @@ export default function EventForm({ onCreate, onDone }) {
       });
       setSaved(true);
       setValues(empty);
+    } catch (err) {
+      if (err.fields) setErrors(err.fields); // field messages from the API
+      setSubmitError(err.message);
     } finally {
       setSaving(false);
     }
@@ -92,6 +98,8 @@ export default function EventForm({ onCreate, onDone }) {
             <button className="btn btn-sm btn-success" onClick={onDone}>View events</button>
           </div>
         )}
+
+        {submitError && <div className="alert alert-danger" role="alert">{submitError}</div>}
 
         <form onSubmit={submit} noValidate className="ems-form">
           <fieldset>

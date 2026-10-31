@@ -1,77 +1,53 @@
-// Temporary data layer. Events are kept in the browser's localStorage so the UI
-// works before your Node/Mongo API exists. Every function returns a Promise,
-// so later you only need to replace the bodies with fetch() calls and the
-// components will not change.
+// Talks to the Node/Express API in /server.
+// In development, webpack-dev-server proxies "/api" to http://localhost:4000
+// (see the devServer.proxy setting in webpack.config.js), so no CORS or full URL is needed.
 
-const STORAGE_KEY = 'ems.events';
-// const API_BASE = 'http://localhost:4000/api'; // use this when your API is ready
+const API_BASE = '/api';
 
-const seed = [
-  {
-    id: 'seed-1',
-    title: 'Annual Developers Conference',
-    category: 'Conference',
-    description: 'Two days of talks and workshops on web and cloud development.',
-    date: '2026-11-14',
-    startTime: '09:00',
-    endTime: '17:00',
-    venue: 'Expo Centre, Karachi',
-    capacity: 400,
-    ticketPrice: 25,
-    organizerEmail: 'team@example.com',
-  },
-  {
-    id: 'seed-2',
-    title: 'Winter Charity Dinner',
-    category: 'Fundraiser',
-    description: 'A seated dinner supporting local school scholarships.',
-    date: '2026-12-05',
-    startTime: '19:30',
-    endTime: '22:30',
-    venue: 'Grand Ballroom',
-    capacity: 150,
-    ticketPrice: 60,
-    organizerEmail: 'dinner@example.com',
-  },
-];
-
-function read() {
+async function request(path, options = {}) {
+  let res;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
   } catch (e) {
-    /* storage unavailable or corrupt: fall back to seed data */
+    throw new Error('Can’t reach the server. Check that the API is running.');
   }
-  return seed;
-}
 
-function write(events) {
+  if (res.status === 204) return null;
+
+  let data = null;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    data = await res.json();
   } catch (e) {
-    /* ignore */
+    /* non-JSON response */
   }
+
+  if (!res.ok) {
+    const err = new Error((data && data.message) || `Request failed (${res.status}).`);
+    err.fields = data && data.errors;
+    throw err;
+  }
+  return data;
 }
 
 export function getEvents() {
-  // return fetch(`${API_BASE}/events`).then(r => r.json());
-  const sorted = [...read()].sort((a, b) => a.date.localeCompare(b.date));
-  return Promise.resolve(sorted);
+  return request('/events');
+}
+
+export function getEvent(id) {
+  return request(`/events/${id}`);
 }
 
 export function createEvent(event) {
-  // return fetch(`${API_BASE}/events`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(event),
-  // }).then(r => r.json());
-  const created = { ...event, id: String(Date.now()) };
-  write([...read(), created]);
-  return Promise.resolve(created);
+  return request('/events', { method: 'POST', body: JSON.stringify(event) });
+}
+
+export function updateEvent(id, event) {
+  return request(`/events/${id}`, { method: 'PUT', body: JSON.stringify(event) });
 }
 
 export function deleteEvent(id) {
-  // return fetch(`${API_BASE}/events/${id}`, { method: 'DELETE' });
-  write(read().filter(e => e.id !== id));
-  return Promise.resolve();
+  return request(`/events/${id}`, { method: 'DELETE' });
 }

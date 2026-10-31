@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDate, formatTime, todayISO } from '../format';
+import { formatDate, formatTime, todayISO } from './format';
 
 export default function Dashboard({ events, onNavigate }) {
   const upcoming = events.filter(e => e.date >= todayISO());

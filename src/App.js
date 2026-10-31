@@ -3,7 +3,7 @@ import NavBar from './components/NavBar';
 import Dashboard from './components/Dashboard';
 import EventList from './components/EventList';
 import EventForm from './components/EventForm';
-import { getEvents, createEvent, deleteEvent } from './services/eventservice';
+import { getEvents, createEvent, deleteEvent } from './services/eventService';
 
 function Placeholder({ title, text }) {
   return (
@@ -17,9 +17,15 @@ function Placeholder({ title, text }) {
 export default function App() {
   const [view, setView] = useState('dashboard');
   const [events, setEvents] = useState([]);
+  const [error, setError] = useState('');
 
   const load = useCallback(() => {
-    getEvents().then(setEvents);
+    getEvents()
+      .then(data => {
+        setEvents(data);
+        setError('');
+      })
+      .catch(err => setError(err.message));
   }, []);
 
   useEffect(load, [load]);
@@ -30,8 +36,12 @@ export default function App() {
   };
 
   const handleDelete = async id => {
-    await deleteEvent(id);
-    load();
+    try {
+      await deleteEvent(id);
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   let page;
@@ -58,7 +68,15 @@ export default function App() {
   return (
     <div className="ems-app">
       <NavBar current={view} onNavigate={setView} user={{ name: 'Alex Morgan', role: 'Organiser' }} />
-      <main className="container ems-main">{page}</main>
+      <main className="container ems-main">
+        {error && (
+          <div className="alert alert-danger d-flex justify-content-between align-items-center" role="alert">
+            <span>{error}</span>
+            <button className="btn btn-sm btn-outline-danger" onClick={load}>Try again</button>
+          </div>
+        )}
+        {page}
+      </main>
       <footer className="ems-footer">
         <div className="container">Eventide, event management</div>
       </footer>
