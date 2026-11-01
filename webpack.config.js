@@ -16,12 +16,7 @@ module.exports = {
             {
                 test: /\.?js$/,
                 exclude: /node_modules/,
-                use: {
-                    loader: "babel-loader",
-                    options: {
-                        presets: ['@babel/preset-env', '@babel/preset-react']
-                    }
-                }
+                use: "babel-loader"
             },
             {
                 test: /\.css$/,
@@ -34,7 +29,7 @@ module.exports = {
         ]
     },
     devServer: {
-        port: 3001,
+        port: 3000,
         historyApiFallback: true,
         proxy: [{ context: ['/api'], target: 'http://localhost:4000' }],
     },

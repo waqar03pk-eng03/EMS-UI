@@ -10,6 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY webpack.config.js ./
+COPY .babelrc ./
 COPY public ./public
 COPY src ./src
 RUN npx webpack --mode production
@@ -35,6 +36,6 @@ CMD ["node", "server/index.js"]
 FROM nginx:1.27-alpine AS ui
 # Folder that webpack writes to. Change if your webpack output.path is not "dist".
 ARG DIST_DIR=dist
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/${DIST_DIR} /usr/share/nginx/html
 EXPOSE 80
