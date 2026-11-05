@@ -18,3 +18,12 @@ export function formatTime(t) {
   const [h, m] = t.split(':').map(Number);
   return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
+
+export function formatMoney(amount, currency) {
+  const n = Number(amount || 0);
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'USD' }).format(n);
+  } catch (e) {
+    return `${currency || ''} ${n.toFixed(2)}`.trim();
+  }
+}

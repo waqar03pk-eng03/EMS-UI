@@ -28,9 +28,17 @@ services:
         condition: service_healthy
     environment:
       PORT: 4000
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      CLIENT_ORIGIN: http://localhost:8080
       # "mongo" is the service name; containers reach each other by service name.
-      MONGO_URI: mongodb://${MONGO_ROOT_USER:-ems_admin}:${MONGO_ROOT_PASSWORD:-ems_password}@mongo:27017/ems_db?authSource=admin
+      MONGO_URI: mongodb://${MONGO_ROOT_USER:-ems_admin}:${MONGO_ROOT_PASSWORD:-ems_password}@mongo:27017/ems?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your .env file}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+      BOOKING_FEE: ${BOOKING_FEE:-50}
+      BOOKING_CURRENCY: ${BOOKING_CURRENCY:-USD}
+      # Only used by "node server/seed.js"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrator}
     ports:
       - "4000:4000"   # optional: lets you call the API directly while testing
     healthcheck:

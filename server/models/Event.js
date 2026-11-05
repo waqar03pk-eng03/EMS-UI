@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-const CATEGORIES = ['Conference', 'Workshop', 'Concert', 'Wedding', 'Fundraiser', 'Meetup', 'Other'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -11,12 +10,24 @@ function todayISO() {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+// Booking fee state. "amount" is the fee due (or paid); the server sets it, never the client.
+const paymentSchema = new mongoose.Schema(
+  {
+    status: { type: String, enum: ['unpaid', 'paid'], default: 'unpaid' },
+    method: { type: String, enum: ['paypal', 'card'] },
+    amount: { type: Number, min: 0, default: 0 },
+    currency: { type: String },
+    reference: { type: String },
+    paidAt: { type: Date },
+  },
+  { _id: false }
+);
+
 const eventSchema = new mongoose.Schema(
   {
     title: { type: String, required: [true, 'Enter a name for the event.'], trim: true, maxlength: 120 },
-    category: { type: String, enum: { values: CATEGORIES, message: 'Choose a valid category.' }, default: 'Other' },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: [true, 'Choose a category.'] },
     description: { type: String, trim: true, maxlength: 5000, default: '' },
-    // Dates and times are stored as plain strings (YYYY-MM-DD and HH:mm) to match the UI.
     date: {
       type: String,
       required: [true, 'Choose the event date.'],
@@ -51,15 +62,20 @@ const eventSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Enter a valid email address.'],
     },
+    payment: { type: paymentSchema, default: () => ({ status: 'unpaid' }) },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   {
     timestamps: true,
     toJSON: {
-      // The React app expects "id", not "_id" / "__v".
       transform(doc, ret) {
         ret.id = ret._id.toString();
         delete ret._id;
         delete ret.__v;
+        // A populated category arrives as { id, name }; an unpopulated one stays an id string.
+        if (ret.category && typeof ret.category === 'object' && ret.category._id) {
+          ret.category = { id: ret.category._id.toString(), name: ret.category.name };
+        }
         return ret;
       },
     },
@@ -69,4 +85,3 @@ const eventSchema = new mongoose.Schema(
 eventSchema.index({ date: 1, startTime: 1 });
 
 module.exports = mongoose.model('Event', eventSchema);
-module.exports.CATEGORIES = CATEGORIES;
