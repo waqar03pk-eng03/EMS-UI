@@ -17,6 +17,14 @@ function errorHandler(err, req, res, next) {
   if (err instanceof mongoose.Error.CastError) {
     return res.status(400).json({ message: 'Invalid id or value.' });
   }
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || {})[0];
+    const message =
+      field === 'email' ? 'An account with this email already exists.'
+      : field === 'name' ? 'A category with this name already exists.'
+      : 'That value already exists.';
+    return res.status(409).json({ message, errors: field ? { [field]: message } : undefined });
+  }
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ message: 'Request body is not valid JSON.' });
   }

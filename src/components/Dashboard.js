@@ -1,7 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { formatDate, formatTime, todayISO } from './format';
 
-export default function Dashboard({ events, onNavigate }) {
+// events is only provided for logged-in users (the API needs a token).
+export default function Dashboard({ events, user }) {
   const upcoming = events.filter(e => e.date >= todayISO());
   const next = upcoming[0];
   const seats = upcoming.reduce((sum, e) => sum + Number(e.capacity || 0), 0);
@@ -11,15 +13,18 @@ export default function Dashboard({ events, onNavigate }) {
       <section className="ems-hero">
         <div className="ems-hero-copy">
           <h1>Every event, ready on opening night.</h1>
-          <p>
-            Plan the venue, set the tickets and keep your schedule in one place.
-          </p>
-          <button className="btn ems-btn-accent btn-lg" onClick={() => onNavigate('create')}>
-            Create event
-          </button>
+          <p>Plan the venue, set the tickets and keep your schedule in one place.</p>
+          {user ? (
+            <Link to="/create-event" className="btn ems-btn-accent btn-lg">Create event</Link>
+          ) : (
+            <>
+              <Link to="/register" className="btn ems-btn-accent btn-lg mr-2">Create an account</Link>
+              <Link to="/login" className="btn btn-outline-dark btn-lg">Log in</Link>
+            </>
+          )}
         </div>
 
-        {next ? (
+        {user && next ? (
           <article className="ems-ticket" aria-label="Next event">
             <div className="ems-ticket-main">
               <p className="ems-ticket-note">Next up</p>
@@ -35,38 +40,44 @@ export default function Dashboard({ events, onNavigate }) {
         ) : (
           <article className="ems-ticket ems-ticket-empty">
             <div className="ems-ticket-main">
-              <h2>No upcoming events</h2>
-              <p className="mb-0">Create your first event and it will appear here.</p>
+              <h2>{user ? 'No upcoming events' : 'Your next event starts here'}</h2>
+              <p className="mb-0">
+                {user ? 'Create your first event and it will appear here.' : 'Log in to see what’s coming up.'}
+              </p>
             </div>
           </article>
         )}
       </section>
 
-      <section className="row ems-stats">
-        <div className="col-md-4"><div className="ems-stat"><strong>{upcoming.length}</strong> upcoming events</div></div>
-        <div className="col-md-4"><div className="ems-stat"><strong>{seats}</strong> seats on offer</div></div>
-        <div className="col-md-4"><div className="ems-stat"><strong>{events.length - upcoming.length}</strong> past events</div></div>
-      </section>
+      {user && (
+        <>
+          <section className="row ems-stats">
+            <div className="col-md-4"><div className="ems-stat"><strong>{upcoming.length}</strong> upcoming events</div></div>
+            <div className="col-md-4"><div className="ems-stat"><strong>{seats}</strong> seats on offer</div></div>
+            <div className="col-md-4"><div className="ems-stat"><strong>{events.length - upcoming.length}</strong> past events</div></div>
+          </section>
 
-      <section className="mt-5">
-        <div className="d-flex justify-content-between align-items-baseline mb-3">
-          <h2 className="ems-h2">Coming up</h2>
-          <button className="btn btn-link p-0" onClick={() => onNavigate('events')}>See all events</button>
-        </div>
-        {upcoming.length === 0 ? (
-          <p className="text-muted">Nothing scheduled yet.</p>
-        ) : (
-          <ul className="list-unstyled ems-agenda">
-            {upcoming.slice(0, 5).map(e => (
-              <li key={e.id}>
-                <span className="ems-agenda-date">{formatDate(e.date, true)}</span>
-                <span className="ems-agenda-title">{e.title}</span>
-                <span className="ems-agenda-venue">{e.venue}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <section className="mt-5">
+            <div className="d-flex justify-content-between align-items-baseline mb-3">
+              <h2 className="ems-h2">Coming up</h2>
+              <Link to="/events">See all events</Link>
+            </div>
+            {upcoming.length === 0 ? (
+              <p className="text-muted">Nothing scheduled yet.</p>
+            ) : (
+              <ul className="list-unstyled ems-agenda">
+                {upcoming.slice(0, 5).map(e => (
+                  <li key={e.id}>
+                    <span className="ems-agenda-date">{formatDate(e.date, true)}</span>
+                    <span className="ems-agenda-title">{e.title}</span>
+                    <span className="ems-agenda-venue">{e.venue}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
     </>
   );
 }
